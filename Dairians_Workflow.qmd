@@ -1,0 +1,95 @@
+---
+title: "Dairian_Workflow"
+format: html
+editor: visual
+---
+
+## Packages 
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+```
+
+## Data Import 
+```{r}
+claims <- read_csv("claims.csv")
+claims
+
+```
+
+## Data Cleaning  
+```{r}
+claims_clean <- claims %>%
+ filter(STATUS1 %in% "BILLED") %>%
+ filter(STATUS2 %in% "BILLED" | is.na(STATUS2)) %>%
+ filter(STATUSP %in% 
+ "BILLED")
+
+claims_na <- colSums(is.na(claims_clean))
+claims_na
+
+claims_cleaned <- claims_clean %>%
+  select(where(~ !all(is.na(.))))
+
+claims_cleaned
+names(claims_cleaned)
+
+# claims_cleaned %>%
+# filter(DEPARTMENTID >= 6L & DEPARTMENTID <= 20L)
+
+
+```
+
+
+
+## Data Visualization 
+```{r}
+ ggplot(claims_cleaned) +
+  aes(x = DEPARTMENTID) +
+  geom_histogram(bins = 30L, fill = "#112446") +
+  theme_minimal()
+
+```
+
+## Data Visualization 2 
+```{r}
+# Reshape the data from wide to long format
+# Replace NA with 0 for plotting
+claims_cleaned <- claims_cleaned %>%
+  mutate(
+    OUTSTANDING1 = ifelse(is.na(OUTSTANDING1), 0, OUTSTANDING1),
+    OUTSTANDING2 = ifelse(is.na(OUTSTANDING2), 0, OUTSTANDING2),
+    OUTSTANDINGP = ifelse(is.na(OUTSTANDINGP), 0, OUTSTANDINGP)
+  )
+
+# Create a long format data frame for easier plotting with plotly
+claims_long <- claims_cleaned %>%
+  pivot_longer(cols = starts_with("OUTSTANDING"),
+               names_to = "Balance_Type",
+               values_to = "Amount")
+
+# Create an interactive stacked bar plot using plotly
+plot <- plot_ly(claims_long, x = ~PATIENTID, y = ~Amount, type = 'bar', 
+                color = ~Balance_Type) %>%
+  layout(barmode = 'stack',
+         title = 'Outstanding Balances by Patient ID',
+         xaxis = list(title = 'Patient ID'),
+         yaxis = list(title = 'Amount'))
+
+plot
+
+```
+
+
+
+## Data Analysis
+```{r}
+
+
+```
+
+
+
